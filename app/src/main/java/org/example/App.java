@@ -4,7 +4,9 @@
 package org.example;
 
 import org.example.entities.Ticket;
+import org.example.entities.Train;
 import org.example.entities.User;
+import org.example.services.TrainService;
 import org.example.services.UserBookingService;
 import org.example.services.UserServiceUtil;
 
@@ -19,9 +21,9 @@ public class App {
         return "Hello World!";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println(new App().getGreeting());
-        System.out.println("welcome to IRCTC");
+        System.out.println("welcome to IRCTC Booking App");
         UserBookingService userBookingService;
 
         try {
@@ -33,6 +35,8 @@ public class App {
 
         int option = 0;
         Scanner scan = new Scanner(System.in);
+        String sourceSearch = "";
+        String destinationSearch = "";
 
         while(option!=7){
             System.out.println("Choose Option");
@@ -81,6 +85,63 @@ public class App {
                     System.out.println("Fetching all bookings");
                     userBookingService.fetchBooking();
                     break;
+
+                case 4:
+                    System.out.println("Enter source: ");
+                    sourceSearch = scan.next();
+                    System.out.println("Enter Destination: ");
+                    destinationSearch = scan.next();
+                    try{
+                        TrainService trainService = new TrainService();
+                        List<Train> lst = trainService.serachTrains(sourceSearch,destinationSearch);
+                        trainService.printTrains(lst);
+                    }catch(IOException ex) {
+                        System.out.println("cannot fetch trains");
+                        return;
+                    }
+                    break;
+
+                case 5:
+                    System.out.println("Please Enter The Train Number");
+                    String trainNo = scan.next();
+                    Train trainFound = null;
+                    TrainService trainService = null;
+                    try{
+                        trainService = new TrainService();
+                        trainFound = trainService.findByTrainNo(trainNo);
+                    }catch(IOException ex) {
+                        System.out.println("Train not Found");
+                        return;
+                    }
+                    System.out.println("Enter train row for seat");
+                    int r = scan.nextInt();
+                    System.out.println("Enter train column for seat");
+                    int c = scan.nextInt();
+                    List<List<Integer>> seats = trainFound.getSeats();
+                    int value = seats.get(r).get(c);
+                    if(value==1){
+                        System.out.println("Seat not available");
+                        return;
+                    }
+                    seats.get(r).set(c,1);
+                    trainFound.setSeats(seats);
+                    trainService.saveTrainListToFile(trainFound);
+                    try {
+                        userBookingService.bookTicket(trainFound,sourceSearch,destinationSearch);
+                        System.out.println("Booking successful");
+                    }catch (IOException io){
+                        System.out.println("Booking failed");
+                    }
+                    break;
+
+                case 6:
+                    try {
+                        System.out.println("Enter ticketId");
+                        String ticketId = scan.next();
+                        userBookingService.cancelBooking(ticketId);
+                    }catch (IOException io){
+                        System.out.println("Something went wrong");
+                    }
             }
         }
     }

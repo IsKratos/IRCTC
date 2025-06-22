@@ -3,12 +3,12 @@ package org.example.services;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.entities.Ticket;
+import org.example.entities.Train;
 import org.example.entities.User;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class UserBookingService {
 
@@ -59,6 +59,16 @@ public class UserBookingService {
 
     public void fetchBooking(){
         user.printTickets();
+    }
+
+    public void bookTicket(Train train,String source,String destination) throws IOException {
+        Ticket ticket = new Ticket(user.getUserId(), UUID.randomUUID().toString(),
+                source,destination,new Date(System.currentTimeMillis()),train);
+        List<Ticket> tickets = user.getTicketsBooked();
+        tickets.add(ticket);
+        user.setTicketsBooked(tickets);
+        saveUserListToFile();
+        return;
     }
 
     public Boolean cancelBooking(String ticketId) throws IOException {
